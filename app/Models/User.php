@@ -31,6 +31,10 @@ class User extends Authenticatable implements MustVerifyEmail
         'avatar',
         'last_seen_at',
         'is_online',
+        'username',
+        'bio',
+        'profile_completed',
+        'gender'
     ];
 
     /**
@@ -62,7 +66,7 @@ class User extends Authenticatable implements MustVerifyEmail
     public function conversations()
     {
         return $this->belongsToMany(Conversation::class, 'conversation_user')
-            ->withPivot(['joined_at', 'left_at', 'is_admin', 'last_read_at', 'is_muted', 'notification_enabled'])
+            ->withPivot(['joined_at','is_admin', 'last_read_at', 'is_muted', 'notification_enabled'])
             ->withTimestamps();
     }
 

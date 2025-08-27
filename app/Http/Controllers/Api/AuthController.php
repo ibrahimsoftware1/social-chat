@@ -28,6 +28,8 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'gender' => $request->gender,
+            'avatar' => $request->avatar ? $request->file('avatar')->store('avatars', 'public') : null,
         ]);
 
         $user->assignRole('user');
@@ -36,10 +38,7 @@ class AuthController extends Controller
 
         event(new Registered($user));
 
-        return $this->success(
-            'Registered successfully, Please verify your email address',
-            new UserResource($user),
-            201);
+        return $this->ok('Registered successfully, Please verify your email address');
     }
     public function login(LoginRequest $request){
 
