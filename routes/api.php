@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ConversationController;
+use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -66,6 +67,18 @@ Route::middleware('auth:sanctum')->group(function () {
            Route::post('/{conversation}/read', 'markAsRead');
            Route::get('/{conversation}/messages', 'messages');
        });
+});
+
+
+    // Messages routes
+Route::middleware(['auth:sanctum', 'verified'])->prefix('messages')->group(function () {
+    Route::controller(MessageController::class)->group(function () {
+        Route::post('/conversations/{conversation}', 'store');
+        Route::put('/{message}', 'update');
+        Route::delete('/{message}', 'destroy');
+        Route::post('/{message}/read', 'markAsRead');
+        Route::post('/conversations/{conversation}/typing', 'typing');
+    });
 });
 
 
