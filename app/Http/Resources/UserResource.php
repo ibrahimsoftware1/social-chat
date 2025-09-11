@@ -27,9 +27,9 @@ class UserResource extends JsonResource
             'last_seen_at'=>$this->last_seen_at?->toISOString(),
             'created_at'=>$this->created_at->toISOString(),
 
-            'joined_at'=>$this->whenPivotLoaded('conversation_user',fn()=> $this->pivot->joined_at?->toISOString()),
+            'joined_at'=>$this->whenPivotLoaded('conversation_user',fn()=> $this->pivot->joined_at),
             'is_admin'=>$this->whenPivotLoaded('conversation_user',fn()=> $this->pivot->is_admin),
-            'last_read_at'=>$this->whenPivotLoaded('conversation_user',fn()=> $this->pivot->last_read_at?->toISOString()),
+            'last_read_at'=>$this->whenPivotLoaded('conversation_user',fn()=> $this->pivot->last_read_at),
 
 
         ];

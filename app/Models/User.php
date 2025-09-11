@@ -34,7 +34,8 @@ class User extends Authenticatable implements MustVerifyEmail
         'username',
         'bio',
         'profile_completed',
-        'gender'
+        'gender',
+        'banned_at'
     ];
 
     /**
@@ -129,6 +130,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'password' => 'hashed',
         'last_seen_at' => 'datetime',
         'is_online' => 'boolean',
-    ];
+        'banned_at' => 'datetime',
+        ];
 
 }
