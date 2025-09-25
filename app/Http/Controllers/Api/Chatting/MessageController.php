@@ -1,14 +1,18 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Chatting;
 
+use App\Events\MessageDeleted;
+use App\Events\MessageSent;
+use App\Events\MessageUpdated;
+use App\Events\UserStoppedTyping;
+use App\Events\UserTyping;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Message\StoreMessageRequest;
 use App\Http\Resources\MessageResource;
 use App\Models\chatting\Conversation;
 use App\Models\chatting\Message;
 use App\Traits\ApiResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class MessageController extends Controller
@@ -29,7 +33,10 @@ class MessageController extends Controller
                 'type'=>$request->type ?? 'text',
                 'metadata'=>$request->metadata,
             ]);
-            // TODO: Broadcast new message event (WebSocket)
+
+            // Fire the event directly - ShouldBroadcastNow will handle immediate broadcasting
+            event(new MessageSent($message));
+
             DB::commit();
 
             return $this->success('Message sent successfully',
@@ -57,7 +64,8 @@ class MessageController extends Controller
             'content'=>$request->input('content'),
             'edited_at'=>now(),
         ]);
-        // TODO: Broadcast message updated event
+
+        broadcast(new MessageUpdated($message))->toOthers();
 
 
         return $this->success('Message updated successfully',
@@ -71,8 +79,12 @@ class MessageController extends Controller
         if($message->user_id !==auth()->id() && !auth()->user()->hasRole('admin')){
             return $this->error('You Can Only Delete Your Own Messages',null,403);
         }
+
+        $conversationId = $message->conversation_id;
+        $messageId = $message->id;
+
         $message->delete();
-        // TODO: Broadcast message deleted event
+        broadcast(new MessageDeleted($messageId,$conversationId))->toOthers();
 
         return $this->success('Message deleted successfully');
     }
@@ -93,9 +105,22 @@ class MessageController extends Controller
             return $this->error('You are not a participant in this conversation',null,403);
         }
 
-        // TODO: Broadcast typing event
+        // Fire the event directly for immediate broadcasting
+        event(new UserTyping($conversation, auth()->user()));
 
         return $this->success('Typing started successfully');
+    }
+
+    public function stopTyping(Conversation $conversation)
+    {
+        if (!auth()->user()->isInConversation($conversation->id)) {
+            return $this->error('You are not a participant of this conversation', 403);
+        }
+
+        // Fire the event directly for immediate broadcasting
+        event(new UserStoppedTyping($conversation, auth()->user()));
+
+        return $this->success('Stop typing indicator sent');
     }
 
 }

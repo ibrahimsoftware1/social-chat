@@ -2,13 +2,17 @@
 
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\ConversationController;
-use App\Http\Controllers\Api\MessageController;
+use App\Http\Controllers\Api\Chatting\ConversationController;
+use App\Http\Controllers\Api\Chatting\MessageController;
+use App\Http\Controllers\Api\Social\FollowController;
+use App\Http\Controllers\Api\Social\PostController;
 use App\Http\Controllers\Api\UserController;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 
+Broadcast::routes(['middleware' => ['auth:sanctum']]);
 
+// Authentication routes
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
@@ -16,8 +20,6 @@ use Illuminate\Support\Facades\Route;
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->name('verification.verify');
     Route::get('/email/resend', [AuthController::class, 'resendVerificationEmail']);
-
-
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
@@ -78,9 +80,31 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('messages')->group(funct
         Route::delete('/{message}', 'destroy');
         Route::post('/{message}/read', 'markAsRead');
         Route::post('/conversations/{conversation}/typing', 'typing');
+        Route::post('/conversations/{conversation}/stop-typing', 'stopTyping');
     });
 });
 
+// Post routes
+Route::middleware(['auth:sanctum', 'verified'])->prefix('posts')->group(function () {
+    Route::controller(PostController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{post}', 'show');
+        Route::put('/{post}', 'update');
+        Route::delete('/{post}', 'destroy');
+        Route::post('/{post}/pin', 'togglePin');
+        Route::get('/user/{user}', 'userPosts');
+        Route::get('/feed', 'feed');
+        Route::get('/explore', 'index');
+    });
+});
 
+// Follow routes
+Route::middleware(['auth:sanctum', 'verified'])->prefix('users')->group(function () {
+    Route::controller(FollowController::class)->group(function () {
+        Route::post('/{user}/follow', 'follow');
+        Route::delete('/{user}/unfollow', 'unfollow');
+        Route::get('/{user}/followers', 'followers');
+        Route::get('/{user}/following', 'following');});
 
-
+});

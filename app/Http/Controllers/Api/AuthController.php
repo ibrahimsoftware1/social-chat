@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Events\OnlineStatusChanged;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
@@ -40,6 +41,7 @@ class AuthController extends Controller
 
         return $this->ok('Registered successfully, Please verify your email address');
     }
+
     public function login(LoginRequest $request){
 
             if(!Auth::attempt($request->only('email','password'))){
@@ -55,6 +57,7 @@ class AuthController extends Controller
 
             $token=$user->createToken('auth_token')->plainTextToken;
             $user->markAsOnline();
+            broadcast(new OnlineStatusChanged($user,true))->toOthers();
 
             return $this->success('Logged in successfully',
                 [
@@ -146,7 +149,10 @@ class AuthController extends Controller
 
     public function Logout(Request $request){
         $user=User::where('is_online',true);
+
         $request->user()->markAsOffline();
+       // broadcast(new OnlineStatusChanged($user, false));
+
         $request->user()->currentAccessToken()->delete();
         return $this->success('Logged out successfully');
     }

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-time Diagnostics</title>
+    <script src="https://js.pusher.com/8.2.0/pusher.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body { font-family: monospace; padding: 20px; }
+        .log { margin: 5px 0; padding: 5px; border-left: 3px solid #ccc; }
+        .log.success { border-color: #4ade80; background: #f0fdf4; }
+        .log.error { border-color: #ef4444; background: #fef2f2; }
+        .log.warning { border-color: #f59e0b; background: #fffbeb; }
+        .user-section { border: 1px solid #ccc; margin: 20px 0; padding: 15px; }
+        button { padding: 10px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Real-time Diagnostics Tool</h1>
+
+    <div class="user-section">
+        <h3>User 1 (ibrah)</h3>
+        <button onclick="loginUser1()">Login User1</button>
+        <button onclick="sendMessageUser1()">Send Message</button>
+        <div id="user1-logs"></div>
+    </div>
+
+    <div class="user-section">
+        <h3>User 2 (lana)</h3>
+        <button onclick="loginUser2()">Login User2</button>
+        <button onclick="sendMessageUser2()">Send Message</button>
+        <div id="user2-logs"></div>
+    </div>
+
+    <div class="user-section">
+        <h3>System Logs</h3>
+        <div id="system-logs"></div>
+    </div>
+
+    <script>
+        let user1Echo = null;
+        let user2Echo = null;
+        let user1Token = null;
+        let user2Token = null;
+
+        function log(section, message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logDiv = document.getElementById(section + '-logs');
+            const logEntry = document.createElement('div');
+            logEntry.className = `log ${type}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            console.log(`[${section}] ${message}`);
+        }
+
+        async function loginUser1() {
+            try {
+                log('user1', '🔐 Logging in as ibrah...', 'info');
+
+                const response = await axios.post('http://localhost:8000/api/login', {
+                    email: 'admin@example.com',
+                    password: 'password123'
+                });
+
+                const data = response.data.data || response.data;
+                user1Token = data.access_token;
+
+                log('user1', `✅ Login successful - User ID: ${data.user.id}`, 'success');
+
+                // Initialize Echo for User1
+                user1Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: 'w3ega2dc8ka76bwzaxvh',
+                    wsHost: '127.0.0.1',
+                    wsPort: 8080,
+                    wssPort: 8080,
+                    forceTLS: false,
+                    encrypted: false,
+                    disableStats: true,
+                    enabledTransports: ['ws', 'wss'],
+                    cluster: 'mt1',
+                    auth: {
+                        headers: {
+                            Authorization: `Bearer ${user1Token}`,
+                            Accept: 'application/json'
+                        }
+                    },
+                    authEndpoint: 'http://localhost:8000/api/broadcasting/auth'
+                });
+
+                user1Echo.connector.pusher.connection.bind('connected', () => {
+                    log('user1', '🟢 WebSocket connected', 'success');
+
+                    // Subscribe to channel
+                    user1Echo.private('conversation.2')
+                        .subscribed(() => {
+                            log('user1', '✅ Subscribed to private channel', 'success');
+                        })
+                        .listen('.message.sent', (event) => {
+                            log('user1', `📨 MESSAGE RECEIVED: ${event.message.content} from user ${event.message.user_id}`, 'success');
+                        })
+                        .listen('.user.typing', (event) => {
+                            log('user1', `⌨️ TYPING: ${event.user_name} is typing`, 'info');
+                        })
+                        .error((error) => {
+                            log('user1', `❌ Channel error: ${JSON.stringify(error)}`, 'error');
+                        });
+
+                    // Add global event listener to catch all events
+                    user1Echo.connector.pusher.bind_global((eventName, data) => {
+                        if (eventName.includes('message') || eventName.includes('conversation')) {
+                            log('user1', `🌐 GLOBAL EVENT: ${eventName} - ${JSON.stringify(data)}`, 'warning');
+                        }
+                    });
+                });
+
+                user1Echo.connector.pusher.connection.bind('error', (error) => {
+                    log('user1', `❌ WebSocket error: ${JSON.stringify(error)}`, 'error');
+                });
+
+            } catch (error) {
+                log('user1', `❌ Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function loginUser2() {
+            try {
+                log('user2', '🔐 Logging in as lana...', 'info');
+
+                const response = await axios.post('http://localhost:8000/api/login', {
+                    email: 'lana@gmail.com',
+                    password: 'mamab124224'
+                });
+
+                const data = response.data.data || response.data;
+                user2Token = data.access_token;
+
+                log('user2', `✅ Login successful - User ID: ${data.user.id}`, 'success');
+
+                // Initialize Echo for User2
+                user2Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: 'w3ega2dc8ka76bwzaxvh',
+                    wsHost: '127.0.0.1',
+                    wsPort: 8080,
+                    wssPort: 8080,
+                    forceTLS: false,
+                    encrypted: false,
+                    disableStats: true,
+                    enabledTransports: ['ws', 'wss'],
+                    cluster: 'mt1',
+                    auth: {
+                        headers: {
+                            Authorization: `Bearer ${user2Token}`,
+                            Accept: 'application/json'
+                        }
+                    },
+                    authEndpoint: 'http://localhost:8000/api/broadcasting/auth'
+                });
+
+                user2Echo.connector.pusher.connection.bind('connected', () => {
+                    log('user2', '🟢 WebSocket connected', 'success');
+
+                    // Subscribe to channel
+                    user2Echo.private('conversation.2')
+                        .subscribed(() => {
+                            log('user2', '✅ Subscribed to private channel', 'success');
+                        })
+                        .listen('.message.sent', (event) => {
+                            log('user2', `📨 MESSAGE RECEIVED: ${event.message.content} from user ${event.message.user_id}`, 'success');
+                        })
+                        .listen('.user.typing', (event) => {
+                            log('user2', `⌨️ TYPING: ${event.user_name} is typing`, 'info');
+                        })
+                        .error((error) => {
+                            log('user2', `❌ Channel error: ${JSON.stringify(error)}`, 'error');
+                        });
+
+                    // Add global event listener to catch all events
+                    user2Echo.connector.pusher.bind_global((eventName, data) => {
+                        if (eventName.includes('message') || eventName.includes('conversation')) {
+                            log('user2', `🌐 GLOBAL EVENT: ${eventName} - ${JSON.stringify(data)}`, 'warning');
+                        }
+                    });
+                });
+
+                user2Echo.connector.pusher.connection.bind('error', (error) => {
+                    log('user2', `❌ WebSocket error: ${JSON.stringify(error)}`, 'error');
+                });
+
+            } catch (error) {
+                log('user2', `❌ Login failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendMessageUser1() {
+            if (!user1Token) {
+                log('user1', '❌ Please login first', 'error');
+                return;
+            }
+
+            try {
+                log('user1', '📤 Sending message...', 'info');
+
+                const response = await axios.post(
+                    'http://localhost:8000/api/messages/conversations/2',
+                    {
+                        content: 'Test message from ibrah',
+                        type: 'text',
+                        metadata: null
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${user1Token}`,
+                            Accept: 'application/json'
+                        }
+                    }
+                );
+
+                log('user1', `✅ Message sent successfully - ID: ${response.data.data.id}`, 'success');
+
+            } catch (error) {
+                log('user1', `❌ Failed to send message: ${error.message}`, 'error');
+            }
+        }
+
+        async function sendMessageUser2() {
+            if (!user2Token) {
+                log('user2', '❌ Please login first', 'error');
+                return;
+            }
+
+            try {
+                log('user2', '📤 Sending message...', 'info');
+
+                const response = await axios.post(
+                    'http://localhost:8000/api/messages/conversations/2',
+                    {
+                        content: 'Test message from lana',
+                        type: 'text',
+                        metadata: null
+                    },
+                    {
+                        headers: {
+                            Authorization: `Bearer ${user2Token}`,
+                            Accept: 'application/json'
+                        }
+                    }
+                );
+
+                log('user2', `✅ Message sent successfully - ID: ${response.data.data.id}`, 'success');
+
+            } catch (error) {
+                log('user2', `❌ Failed to send message: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -6,6 +6,7 @@ use App\Models\chatting\Conversation;
 use App\Models\chatting\Message;
 use App\Models\chatting\MessageAttachment;
 use App\Models\chatting\MessageStatus;
+use App\Models\social\Follow;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,6 +80,27 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return $this->hasMany(MessageAttachment::class, 'user_id');
     }
+
+    public function followers()
+    {
+        return $this->hasMany(Follow::class, 'following_id');
+    }
+
+    public function following()
+    {
+        return $this->hasMany(Follow::class, 'follower_id');
+    }
+
+    public function isFollowing($userId)
+    {
+        return $this->following()->where('following_id', $userId)->exists();
+    }
+
+    public function isFollowedBy($userId)
+    {
+        return $this->followers()->where('follower_id', $userId)->exists();
+    }
+
 
     public function isInConversation($conversationId): bool
     {

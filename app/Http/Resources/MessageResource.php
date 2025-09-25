@@ -39,10 +39,6 @@ class MessageResource extends JsonResource
             'is_delivered' => $this->when(auth()->check(), fn() =>
             $this->isDeliveredTo(auth()->id())
             ),
-
-
-
-
             ];
     }
 }

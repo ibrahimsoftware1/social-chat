@@ -24,15 +24,15 @@ trait ApiResponse
 
     public function error($errors,$data=null,$statusCode=400){
 
+        $response = [
+            'errors' => $errors,
+            'status' => $statusCode
+        ];
+
         if(!is_null($data)){
             $response['data'] = $data;
         }
 
-        return response()->json([
-            'errors' => $errors,
-            'status' => $statusCode
-        ], $statusCode);
-
-
+        return response()->json($response, $statusCode);
     }
 }

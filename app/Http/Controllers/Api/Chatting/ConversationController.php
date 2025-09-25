@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers\Api\Chatting;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Conversation\AddParticipantsRequest;
@@ -11,7 +11,6 @@ use App\Http\Resources\MessageResource;
 use App\Models\chatting\Conversation;
 use App\Models\User;
 use App\Traits\ApiResponse;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
